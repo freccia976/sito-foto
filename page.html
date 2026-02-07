@@ -236,6 +236,30 @@ projectId:"sito-foto-98234"
 
 const db=getFirestore(app);
 
+// ===== BLOCCO ACCESSO =====
+
+(async ()=>{
+
+  const snap = await getDoc(doc(db,"page","config"));
+
+  // Pagina non esiste
+  if(!snap.exists()){
+    showDeleted();
+    return;
+  }
+
+  // ADMIN entra diretto
+  if(isAdmin){
+    enterPage();
+    return;
+  }
+
+
+  // Altrimenti resta su login
+  loginBox.style.display="block";
+
+})();
+
 // ===== ELEMENTI =====
 const gallery=document.getElementById("gallery");
 const loginBox=document.getElementById("loginBox");
