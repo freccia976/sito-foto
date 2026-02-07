@@ -133,8 +133,14 @@ header button{
 <button onclick="setGrid()">🧱</button>
 <button onclick="setFull()">🖼️</button>
 
+
 <div class="admin-tools" id="adminTools">
 <button onclick="fileInput.click()">➕ Carica foto</button>
+
+<button onclick="deletePage()" style="background:#e53e3e;">
+🗑 Elimina pagina
+</button>
+
 </div>
 
 </div>
@@ -166,8 +172,11 @@ import {
   addDoc,
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  deleteDoc,
+  getDocs
 }
+
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
@@ -272,7 +281,14 @@ gallery.innerHTML="";
 
 snap.forEach(d=>{
 
-const imgUrl=d.data().url;
+const originalUrl = d.data().url;
+
+// WATERMARK CLOUDINARY
+const imgUrl = originalUrl.replace(
+  "/upload/",
+  "/upload/l_text:Arial_40:©%20Privato,o_30,g_south_east,x_20,y_20/"
+);
+
 
 gallery.innerHTML+=`
 <div class="photo">
@@ -364,6 +380,31 @@ e.preventDefault();
 }
 });
 
+// ===== ELIMINA PAGINA =====
+
+window.deletePage = async function () {
+
+  if (!confirm("Eliminare pagina e tutte le foto?"))
+    return;
+
+  // Cancella config
+  await deleteDoc(doc(db,"page","config"));
+
+  // Cancella foto DB
+  const photos = await getDocs(collection(db,"photos"));
+  photos.forEach(p=>deleteDoc(p.ref));
+
+  // Cancella chat
+  const msgs = await getDocs(collection(db,"messages"));
+  msgs.forEach(m=>deleteDoc(m.ref));
+
+  alert("Pagina eliminata");
+
+  location.reload();
+};
+
 </script>
+
+
 </body>
 </html>
