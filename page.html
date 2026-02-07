@@ -256,26 +256,30 @@ alert("Password errata");
 // ===== ENTER =====
 async function enterPage(){
 
-const snap=await getDoc(doc(db,"page","config"));
+  const snap = await getDoc(doc(db,"page","config"));
 
-if(!snap.exists()){
-if(isAdmin) location.href="admin.html";
-else showDeleted();
-return;
-}
+  if(!snap.exists()){
+    showDeleted();
+    return;
+  }
 
-loginBox.style.display="none";
-content.style.display="grid";
-loadPhotosRealtime();
-}
+  // ADMIN entra sempre
+  if(isAdmin){
+    loginBox.style.display="none";
+    content.style.display="grid";
+    loadPhotosRealtime();
+    return;
+  }
 
-if(isAdmin){
-adminTools.style.display="block";
-enterPage();
-}
+  // UTENTE deve avere accesso salvato
+  if(localStorage.getItem("userAccess")!=="true"){
+    loginBox.style.display="block";
+    return;
+  }
 
-if(localStorage.getItem("userAccess")==="true"){
-enterPage();
+  loginBox.style.display="none";
+  content.style.display="grid";
+  loadPhotosRealtime();
 }
 
 // ===== UPLOAD =====
