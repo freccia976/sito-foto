@@ -265,6 +265,31 @@ projectId:"sito-foto-98234"
 });
 
 const db=getFirestore(app);
+// ===== LISTENER CONFIG REALTIME =====
+
+import { onSnapshot }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+onSnapshot(
+  doc(db,"page","config"),
+  snap=>{
+
+    // Pagina eliminata realtime
+    if(!snap.exists()){
+
+      localStorage.removeItem("userAccess");
+
+      if(isAdmin){
+        location.href="index.html";
+      }else{
+        location.href="deleted.html";
+      }
+
+    }
+
+  }
+);
+
 
 // ===== ELEMENTI =====
 const gallery=document.getElementById("gallery");
@@ -278,39 +303,40 @@ const isAdmin=localStorage.getItem("admin")==="true";
 // ===== ACCESSO =====
 (async()=>{
 
-const snap=await getDoc(doc(db,"page","config"));
+  const snap =
+    await getDoc(
+      doc(db,"page","config")
+    );
 
-// 🔴 Pagina eliminata
-if(!snap.exists()){
+  // 🔴 Pagina eliminata
+  if(!snap.exists()){
 
-  localStorage.removeItem("userAccess");
+    localStorage.removeItem("userAccess");
 
-  if(isAdmin){
-    location.href="index.html";
-  }else{
-    location.href="deleted.html";
+    if(isAdmin){
+      location.href="index.html";
+    }else{
+      location.href="deleted.html";
+    }
+
+    return;
   }
 
-  return;
-}
+  // 🟢 ADMIN entra diretto
+  if(isAdmin){
+    enterPage();
+    return;
+  }
 
+  // 🟡 UTENTE deve avere accesso salvato
+  if(localStorage.getItem("userAccess")==="true"){
+    enterPage();
+    return;
+  }
 
-
-
-// 🟢 Admin entra diretto
-if(isAdmin){
-  enterPage();
-  return;
-}
-
-// 🟡 Utente deve avere accesso salvato
-if(localStorage.getItem("userAccess")==="true"){
-  enterPage();
-  return;
-}
-
-// 🔐 Altrimenti login
-loginBox.style.display="block";
+  // 🔒 BLOCCA PAGINA
+  content.style.display="none";
+  loginBox.style.display="block";
 
 })();
 
