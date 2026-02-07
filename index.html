@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Accesso Admin</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      width: 360px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #667eea;
+      color: white;
+    }
+
+    button:hover {
+      background: #556cd6;
+    }
+
+    .error {
+      color: #e53e3e;
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🔐 Admin Login</h1>
+
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+
+  <button onclick="login()">Accedi</button>
+
+  <div id="error" class="error">Credenziali errate</div>
+</div>
+
+<script>
+
+// 🔐 CREDENZIALI ADMIN (modificale tu)
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
+
+// LOGIN
+function login() {
+
+  const username = document.getElementById("user").value.trim();
+  const password = document.getElementById("pass").value.trim();
+  const error = document.getElementById("error");
+
+  error.style.display = "none";
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+
+    // salva login
+    localStorage.setItem("admin", "true");
+
+    // redirect
+    window.location.href = "admin.html";
+
+  } else {
+    error.style.display = "block";
+  }
+}
+
+</script>
+
+</body>
+</html>
