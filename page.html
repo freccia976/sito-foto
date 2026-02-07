@@ -6,8 +6,6 @@
 
 <style>
 
-/* ===== RESET ===== */
-
 *{
   box-sizing:border-box;
   font-family:Arial,sans-serif;
@@ -53,10 +51,12 @@ header button{
 /* ===== LAYOUT ===== */
 
 .layout{
+  display:grid;
+  grid-template-columns:1fr;
   padding:20px 40px;
 }
 
-/* ===== GALLERY GRID ===== */
+/* ===== GALLERY ===== */
 
 .gallery{
   display:grid;
@@ -64,20 +64,21 @@ header button{
   gap:14px;
 }
 
-@media(max-width:1400px){
+@media (max-width:1400px){
 .gallery{grid-template-columns:repeat(5,1fr);}
 }
-@media(max-width:1100px){
+@media (max-width:1100px){
 .gallery{grid-template-columns:repeat(4,1fr);}
 }
-@media(max-width:800px){
+@media (max-width:800px){
 .gallery{grid-template-columns:repeat(3,1fr);}
 }
-@media(max-width:500px){
+@media (max-width:500px){
 .gallery{grid-template-columns:repeat(2,1fr);}
 }
 
 .photo{
+  background:transparent;
   border-radius:10px;
   overflow:hidden;
   aspect-ratio:1/1;
@@ -88,6 +89,7 @@ header button{
   height:100%;
   object-fit:cover;
   display:block;
+  border-radius:10px;
 }
 
 /* ===== FULL VIEW ===== */
@@ -102,10 +104,11 @@ header button{
   width:90%;
   max-width:1200px;
   height:80vh;
-  background:#000;
   display:flex;
   justify-content:center;
   align-items:center;
+  background:#000;
+  border-radius:12px;
 }
 
 .gallery.full img{
@@ -152,6 +155,7 @@ header button{
   justify-content:center;
   align-items:center;
   font-size:28px;
+  color:white;
   z-index:9999;
 }
 
@@ -169,8 +173,8 @@ header button{
 <button onclick="setFull()">🖼️</button>
 
 <div class="admin-tools" id="adminTools">
-<button onclick="fileInput.click()">➕</button>
-<button onclick="deletePage()" style="background:#e53e3e;">🗑</button>
+<button onclick="fileInput.click()">➕ Carica foto</button>
+<button onclick="deletePage()" style="background:#e53e3e;">🗑 Elimina pagina</button>
 </div>
 
 </div>
@@ -191,17 +195,17 @@ header button{
 <script type="module">
 
 // ===== FIREBASE =====
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
 getFirestore,doc,getDoc,collection,addDoc,
 onSnapshot,query,orderBy,deleteDoc,getDocs
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app=initializeApp({
-apiKey:"AIzaSy...",
+apiKey:"AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
 authDomain:"sito-foto-98234.firebaseapp.com",
 projectId:"sito-foto-98234"
 });
@@ -217,7 +221,7 @@ const fileInput=document.getElementById("fileInput");
 
 const isAdmin=localStorage.getItem("admin")==="true";
 
-// ===== VIEW MODE =====
+// ===== VIEW =====
 window.setGrid=()=>{
 gallery.classList.remove("full");
 localStorage.setItem("viewMode","grid");
@@ -262,7 +266,7 @@ return;
 }
 
 loginBox.style.display="none";
-content.style.display="block";
+content.style.display="grid";
 loadPhotosRealtime();
 }
 
@@ -276,11 +280,9 @@ enterPage();
 }
 
 // ===== UPLOAD =====
-fileInput.addEventListener("change",uploadFiles);
+fileInput.addEventListener("change",async()=>{
 
-async function uploadFiles(files=fileInput.files){
-
-for(let file of files){
+for(let file of fileInput.files){
 
 const fd=new FormData();
 fd.append("file",file);
@@ -298,7 +300,7 @@ url:data.secure_url,
 created:Date.now()
 });
 }
-}
+});
 
 // ===== GALLERY =====
 function loadPhotosRealtime(){
@@ -318,7 +320,7 @@ const original=d.data().url;
 
 const gridUrl=original.replace(
 "/upload/",
-"/upload/c_fill,w_500,h_500,q_auto,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
+"/upload/c_fill,w_400,h_400,q_auto,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
 );
 
 const fullUrl=original.replace(
@@ -335,6 +337,80 @@ gallery.innerHTML+=`
 });
 });
 }
+
+// ===== CHAT SOTTO HEADER =====
+
+const header=document.querySelector("header");
+const headerHeight=header.offsetHeight;
+
+const chatBox=document.createElement("div");
+
+chatBox.style.position="fixed";
+chatBox.style.right="0";
+chatBox.style.top=headerHeight+"px";
+chatBox.style.width="300px";
+chatBox.style.height=`calc(100vh - ${headerHeight}px)`;
+chatBox.style.background="#15182d";
+chatBox.style.display="flex";
+chatBox.style.flexDirection="column";
+chatBox.style.borderLeft="1px solid #23264a";
+
+chatBox.innerHTML=`
+<div style="padding:15px;border-bottom:1px solid #23264a;">
+<input id="msgInput" placeholder="Scrivi..."
+style="width:100%;padding:10px;border:none;border-radius:6px;">
+</div>
+<div id="messages"
+style="flex:1;overflow-y:auto;padding:15px;"></div>
+`;
+
+document.body.appendChild(chatBox);
+
+const messagesDiv=document.getElementById("messages");
+const msgInput=document.getElementById("msgInput");
+const user=isAdmin?"admin":"user";
+
+msgInput.addEventListener("keydown",async e=>{
+if(e.key==="Enter"){
+
+const text=msgInput.value.trim();
+if(!text)return;
+
+msgInput.value="";
+
+await addDoc(collection(db,"messages"),{
+text,user,time:Date.now()
+});
+}
+});
+
+const mq=query(
+collection(db,"messages"),
+orderBy("time","desc")
+);
+
+onSnapshot(mq,snap=>{
+
+messagesDiv.innerHTML="";
+
+snap.forEach(d=>{
+
+const m=d.data();
+
+const name=m.user==="admin"?"Admin":"Ospite";
+const align=m.user==="admin"?"right":"left";
+
+const text=m.text.replace(
+/(https?:\/\/[^\s]+)/g,
+'<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+);
+
+messagesDiv.innerHTML+=`
+<div style="margin-bottom:10px;text-align:${align}">
+<b>${name}:</b> ${text}
+</div>`;
+});
+});
 
 // ===== DELETE PAGE =====
 window.deletePage=async()=>{
@@ -365,28 +441,6 @@ align-items:center;
 flex-direction:column;">
 <h1>📸 Pagina eliminata</h1>
 </div>`;
-}
-
-// ===== DRAG PAGE =====
-if(isAdmin){
-
-let overlay=null;
-
-document.addEventListener("dragenter",e=>{
-e.preventDefault();
-if(!overlay){
-overlay=document.createElement("div");
-overlay.className="drag-overlay";
-overlay.innerText="Rilascia le foto";
-document.body.appendChild(overlay);
-}
-});
-
-document.addEventListener("drop",e=>{
-e.preventDefault();
-overlay?.remove();
-uploadFiles(e.dataTransfer.files);
-});
 }
 
 </script>
