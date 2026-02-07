@@ -56,7 +56,7 @@ header button{
   padding:20px 40px;
 }
 
-/* ===== GALLERY ===== */
+/* ===== GALLERY GRID ===== */
 
 .gallery{
   display:grid;
@@ -87,7 +87,7 @@ header button{
 .photo img{
   width:100%;
   height:100%;
-  object-fit:contain; /* MOSTRA TUTTA */
+  object-fit:contain;
   background:#000;
 }
 
@@ -142,6 +142,31 @@ header button{
   border-radius:6px;
   background:#667eea;
   color:white;
+}
+
+/* ===== CHAT ===== */
+
+.chat{
+  position:fixed;
+  right:0;
+  width:300px;
+  background:#15182d;
+  border-left:1px solid #23264a;
+  display:flex;
+  flex-direction:column;
+}
+
+.chat input{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+}
+
+.messages{
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
 }
 
 /* ===== DRAG OVERLAY ===== */
@@ -256,36 +281,33 @@ alert("Password errata");
 // ===== ENTER =====
 async function enterPage(){
 
-  const snap = await getDoc(doc(db,"page","config"));
+const snap=await getDoc(doc(db,"page","config"));
+if(!snap.exists()) return showDeleted();
 
-  if(!snap.exists()){
-    showDeleted();
-    return;
-  }
+loginBox.style.display="none";
+content.style.display="grid";
+loadPhotosRealtime();
+}
 
-  // ADMIN entra sempre
-  if(isAdmin){
-    loginBox.style.display="none";
-    content.style.display="grid";
-    loadPhotosRealtime();
-    return;
-  }
+if(isAdmin){
+adminTools.style.display="block";
+enterPage();
+}
 
-  // UTENTE deve avere accesso salvato
-  if(localStorage.getItem("userAccess")!=="true"){
-    loginBox.style.display="block";
-    return;
-  }
-
-  loginBox.style.display="none";
-  content.style.display="grid";
-  loadPhotosRealtime();
+if(localStorage.getItem("userAccess")==="true"){
+enterPage();
 }
 
 // ===== UPLOAD =====
-fileInput.addEventListener("change",async()=>{
+fileInput.addEventListener("change",uploadFiles);
 
-for(let file of fileInput.files){
+async function uploadFiles(filesInput){
+
+const files=filesInput?.target?.files || filesInput;
+
+for(let file of files){
+
+if(!file.type.startsWith("image/")) continue;
 
 const fd=new FormData();
 fd.append("file",file);
@@ -303,15 +325,12 @@ url:data.secure_url,
 created:Date.now()
 });
 }
-});
+}
 
 // ===== GALLERY =====
 function loadPhotosRealtime(){
 
-const q=query(
-collection(db,"photos"),
-orderBy("created","desc")
-);
+const q=query(collection(db,"photos"),orderBy("created","desc"));
 
 onSnapshot(q,snap=>{
 
@@ -321,9 +340,9 @@ snap.forEach(d=>{
 
 const original=d.data().url;
 
-const gridUrl = original.replace(
-  "/upload/",
-  "/upload/c_fit,w_500,h_500,q_auto,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
+const gridUrl=original.replace(
+"/upload/",
+"/upload/c_fit,w_500,h_500,q_auto,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
 );
 
 const fullUrl=original.replace(
@@ -341,33 +360,23 @@ gallery.innerHTML+=`
 });
 }
 
-// ===== CHAT SOTTO HEADER =====
+// ===== CHAT =====
 
-const header=document.querySelector("header");
-const headerHeight=header.offsetHeight;
+const headerHeight=document.querySelector("header").offsetHeight;
 
-const chatBox=document.createElement("div");
+const chat=document.createElement("div");
+chat.className="chat";
+chat.style.top=headerHeight+"px";
+chat.style.height=`calc(100vh - ${headerHeight}px)`;
 
-chatBox.style.position="fixed";
-chatBox.style.right="0";
-chatBox.style.top=headerHeight+"px";
-chatBox.style.width="300px";
-chatBox.style.height=`calc(100vh - ${headerHeight}px)`;
-chatBox.style.background="#15182d";
-chatBox.style.display="flex";
-chatBox.style.flexDirection="column";
-chatBox.style.borderLeft="1px solid #23264a";
-
-chatBox.innerHTML=`
+chat.innerHTML=`
 <div style="padding:15px;border-bottom:1px solid #23264a;">
-<input id="msgInput" placeholder="Scrivi..."
-style="width:100%;padding:10px;border:none;border-radius:6px;">
+<input id="msgInput" placeholder="Scrivi...">
 </div>
-<div id="messages"
-style="flex:1;overflow-y:auto;padding:15px;"></div>
+<div class="messages" id="messages"></div>
 `;
 
-document.body.appendChild(chatBox);
+document.body.appendChild(chat);
 
 const messagesDiv=document.getElementById("messages");
 const msgInput=document.getElementById("msgInput");
@@ -377,7 +386,7 @@ msgInput.addEventListener("keydown",async e=>{
 if(e.key==="Enter"){
 
 const text=msgInput.value.trim();
-if(!text)return;
+if(!text) return;
 
 msgInput.value="";
 
@@ -387,10 +396,7 @@ text,user,time:Date.now()
 }
 });
 
-const mq=query(
-collection(db,"messages"),
-orderBy("time","desc")
-);
+const mq=query(collection(db,"messages"),orderBy("time","desc"));
 
 onSnapshot(mq,snap=>{
 
@@ -399,7 +405,6 @@ messagesDiv.innerHTML="";
 snap.forEach(d=>{
 
 const m=d.data();
-
 const name=m.user==="admin"?"Admin":"Ospite";
 const align=m.user==="admin"?"right":"left";
 
@@ -415,7 +420,7 @@ messagesDiv.innerHTML+=`
 });
 });
 
-// ===== DELETE PAGE =====
+// ===== DELETE =====
 window.deletePage=async()=>{
 
 if(!confirm("Eliminare pagina?")) return;
@@ -429,97 +434,40 @@ const msgs=await getDocs(collection(db,"messages"));
 msgs.forEach(m=>deleteDoc(m.ref));
 
 localStorage.clear();
-
-if(isAdmin) location.href="admin.html";
-else showDeleted();
+location.reload();
 };
 
-function showDeleted(){
-document.body.innerHTML=`
-<div style="
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;">
-<h1>📸 Pagina eliminata</h1>
-</div>`;
+// ===== DRAG DROP =====
+if(isAdmin){
+
+let overlay=null;
+
+document.addEventListener("dragenter",e=>{
+e.preventDefault();
+
+if(!overlay){
+overlay=document.createElement("div");
+overlay.className="drag-overlay";
+overlay.innerText="Rilascia le foto per caricarle";
+document.body.appendChild(overlay);
 }
-// ===== DRAG SU TUTTA PAGINA =====
+});
 
-if (isAdmin) {
+document.addEventListener("dragover",e=>e.preventDefault());
 
-  let overlay = null;
+document.addEventListener("dragleave",e=>{
+if(e.clientX===0 && e.clientY===0){
+overlay?.remove();
+overlay=null;
+}
+});
 
-  // DRAG ENTER
-  document.addEventListener("dragenter", e => {
-
-    e.preventDefault();
-
-    if (!overlay) {
-
-      overlay = document.createElement("div");
-      overlay.className = "drag-overlay";
-      overlay.innerText = "Rilascia le foto per caricarle";
-
-      document.body.appendChild(overlay);
-    }
-  });
-
-  // DRAG OVER
-  document.addEventListener("dragover", e => {
-    e.preventDefault();
-  });
-
-  // DRAG LEAVE
-  document.addEventListener("dragleave", e => {
-
-    if (e.clientX === 0 && e.clientY === 0) {
-
-      if (overlay) {
-        overlay.remove();
-        overlay = null;
-      }
-    }
-  });
-
-  // DROP FILES
-  document.addEventListener("drop", async e => {
-
-    e.preventDefault();
-
-    if (overlay) {
-      overlay.remove();
-      overlay = null;
-    }
-
-    const files = e.dataTransfer.files;
-
-    for (let file of files) {
-
-      if (!file.type.startsWith("image/"))
-        continue;
-
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "sito-foto");
-
-      const res = await fetch(
-        "https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
-        {
-          method: "POST",
-          body: fd
-        }
-      );
-
-      const data = await res.json();
-
-      await addDoc(collection(db, "photos"), {
-        url: data.secure_url,
-        created: Date.now()
-      });
-    }
-  });
+document.addEventListener("drop",async e=>{
+e.preventDefault();
+overlay?.remove();
+overlay=null;
+uploadFiles(e.dataTransfer.files);
+});
 }
 
 </script>
