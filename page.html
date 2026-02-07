@@ -410,96 +410,127 @@ gallery.innerHTML+=`
 }
 
 // ===== CHAT =====
-const headerHeight=document.querySelector("header").offsetHeight;
+// ===== CHAT =====
 
-const chat=document.createElement("div");
-chat.className="chat";
-chat.style.top=headerHeight+"px";
-chat.style.height=`calc(100vh - ${headerHeight}px)`;
+const headerHeight =
+  document.querySelector("header").offsetHeight;
 
-chat.innerHTML=`
+const chat = document.createElement("div");
+chat.className = "chat";
+chat.style.top = headerHeight + "px";
+chat.style.height =
+  `calc(100vh - ${headerHeight}px)`;
+
+chat.innerHTML = `
 
 <div class="chat-input">
-  <input id="msgInput" placeholder="Scrivi un messaggio...">
+  <input id="msgInput"
+  placeholder="Scrivi un messaggio...">
 </div>
 
-<div class="messages" id="messages"></div>
+<div class="messages"
+     id="messages"></div>
 
 `;
 
-
 document.body.appendChild(chat);
 
-const messagesDiv=document.getElementById("messages");
-const msgInput=document.getElementById("msgInput");
-const user=isAdmin?"admin":"user";
+const messagesDiv =
+  document.getElementById("messages");
 
-msgInput.addEventListener("keydown",async e=>{
-if(e.key==="Enter"){
-await addDoc(collection(db,"messages"),{
-text:msgInput.value,
-user,
-time:Date.now()
+const msgInput =
+  document.getElementById("msgInput");
+
+const user =
+  isAdmin ? "admin" : "user";
+
+
+// ===== INVIO =====
+
+msgInput.addEventListener(
+  "keydown",
+  async e => {
+
+  if (e.key === "Enter") {
+
+    const text =
+      msgInput.value.trim();
+
+    if (!text) return;
+
+    msgInput.value = "";
+
+    await addDoc(
+      collection(db,"messages"),
+      {
+        text,
+        user,
+        time: Date.now()
+      }
+    );
+  }
 });
-msgInput.value="";
-}
-});
+
+
+// ===== START CHAT =====
 
 async function startChat(){
 
-const snap = await getDoc(doc(db,"page","config"));
+  const snap =
+    await getDoc(
+      doc(db,"page","config")
+    );
 
-if(!snap.exists()){
-  showDeleted();
-  return;
-}
+  // Pagina eliminata
+  if(!snap.exists()){
+    showDeleted();
+    return;
+  }
 
-onSnapshot(
-  query(collection(db,"messages"),orderBy("time","desc")),
-  snap=>{
+  const mq = query(
+    collection(db,"messages"),
+    orderBy("time","desc")
+  );
+
+  onSnapshot(mq, snap=>{
 
     messagesDiv.innerHTML="";
 
     snap.forEach(d=>{
 
-      const m=d.data();
-      const role=m.user==="admin"?"admin":"user";
-      const name=m.user==="admin"?"Admin":"Ospite";
+      const m = d.data();
 
-      const text=m.text.replace(
-        /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
-      );
+      const role =
+        m.user==="admin"
+        ? "admin"
+        : "user";
 
-      messagesDiv.innerHTML+=`
-      <div class="msg ${role}">
-        <b>${name}:</b><br>${text}
-      </div>`;
+      const name =
+        m.user==="admin"
+        ? "Admin"
+        : "Ospite";
+
+      const text =
+        m.text.replace(
+          /(https?:\/\/[^\s]+)/g,
+          '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+        );
+
+      messagesDiv.innerHTML += `
+        <div class="msg ${role}">
+          <b>${name}:</b><br>
+          ${text}
+        </div>`;
     });
 
-  }
-);
+  });
+
 }
 
 
-messagesDiv.innerHTML="";
+// AVVIA CHAT QUANDO ENTRI
+startChat();
 
-snap.forEach(d=>{
-const m=d.data();
-const role = m.user === "admin" ? "admin" : "user";
-const name = m.user === "admin" ? "Admin" : "Ospite";
-
-const text = m.text.replace(
-  /(https?:\/\/[^\s]+)/g,
-  '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
-);
-
-messagesDiv.innerHTML += `
-<div class="msg ${role}">
-  <b>${name}:</b><br>${text}
-</div>`;
-
-});
 
 // ===== DELETE =====
 window.deletePage = async ()=>{
