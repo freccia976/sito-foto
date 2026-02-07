@@ -17,7 +17,7 @@ body{
   color:#eaeaf0;
 }
 
-/* ================= HEADER ================= */
+/* ===== HEADER ===== */
 
 header{
   background:#15182d;
@@ -43,13 +43,9 @@ header button{
   cursor:pointer;
 }
 
-/* ================= ADMIN ================= */
+.admin-tools{display:none;}
 
-.admin-tools{
-  display:none;
-}
-
-/* ================= LAYOUT ================= */
+/* ===== LAYOUT ===== */
 
 .layout{
   display:grid;
@@ -57,15 +53,13 @@ header button{
   padding:20px 40px;
 }
 
-/* ================= GALLERY GRID ================= */
+/* ===== GALLERY ===== */
 
 .gallery{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
   gap:12px;
 }
-
-/* ================= FOTO ================= */
 
 .photo{
   background:#1c2040;
@@ -78,9 +72,11 @@ header button{
   width:100%;
   height:100%;
   object-fit:cover;
+  user-select:none;
+  -webkit-user-drag:none;
 }
 
-/* ================= MODALITÀ INTERA ================= */
+/* ===== FULL VIEW ===== */
 
 .gallery.full{
   grid-template-columns:1fr;
@@ -96,7 +92,7 @@ header button{
   background:black;
 }
 
-/* ================= LOGIN ================= */
+/* ===== LOGIN ===== */
 
 .login{
   max-width:400px;
@@ -128,56 +124,37 @@ header button{
 </head>
 <body>
 
-<!-- ================= HEADER ================= -->
-
 <header>
 
-  <h1>📸 Pagina privata</h1>
+<h1>📸 Pagina privata</h1>
 
-  <div class="header-right">
+<div class="header-right">
 
-    <!-- VISTA PER TUTTI -->
-    <button onclick="setGrid()">🧱</button>
-    <button onclick="setFull()">🖼️</button>
+<button onclick="setGrid()">🧱</button>
+<button onclick="setFull()">🖼️</button>
 
-    <!-- SOLO ADMIN -->
-    <div class="admin-tools" id="adminTools">
-      <button onclick="fileInput.click()">➕ Carica foto</button>
-    </div>
+<div class="admin-tools" id="adminTools">
+<button onclick="fileInput.click()">➕ Carica foto</button>
+</div>
 
-  </div>
-
+</div>
 </header>
 
-<!-- ================= LOGIN ================= -->
-
 <div class="login" id="loginBox">
-
-  <h2>Accesso riservato</h2>
-
-  <input type="password" id="pwd" placeholder="Password">
-
-  <button onclick="checkPassword()">Entra</button>
-
+<h2>Accesso riservato</h2>
+<input type="password" id="pwd" placeholder="Password">
+<button onclick="checkPassword()">Entra</button>
 </div>
-
-<!-- ================= CONTENUTO ================= -->
 
 <div class="layout" id="content" style="display:none;">
-
-  <div class="gallery" id="gallery"></div>
-
+<div class="gallery" id="gallery"></div>
 </div>
-
-<!-- INPUT FILE NASCOSTO -->
 
 <input type="file" id="fileInput" multiple hidden>
 
-<!-- ================= SCRIPT ================= -->
 <script type="module">
 
-
-// ===== FIREBASE IMPORT UNICO =====
+// ===== FIREBASE =====
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
@@ -193,7 +170,6 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ===== CONFIG =====
 const firebaseConfig={
 apiKey:"AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
 authDomain:"sito-foto-98234.firebaseapp.com",
@@ -215,17 +191,26 @@ const fileInput=document.getElementById("fileInput");
 
 const isAdmin=localStorage.getItem("admin")==="true";
 
-// ===== LOGIN PASSWORD =====
-window.checkPassword=async function(){
+// ===== VIEW MODE =====
+window.setGrid=()=>{
+gallery.classList.remove("full");
+localStorage.setItem("viewMode","grid");
+};
+
+window.setFull=()=>{
+gallery.classList.add("full");
+localStorage.setItem("viewMode","full");
+};
+
+if(localStorage.getItem("viewMode")==="full"){
+gallery.classList.add("full");
+}
+
+// ===== LOGIN =====
+window.checkPassword=async()=>{
 
 const pwd=document.getElementById("pwd").value;
-
 const snap=await getDoc(doc(db,"page","config"));
-
-if(!snap.exists()){
-alert("Pagina non attiva");
-return;
-}
 
 if(pwd===snap.data().password){
 localStorage.setItem("userAccess","true");
@@ -235,25 +220,22 @@ alert("Password errata");
 }
 };
 
-// ===== ENTRA =====
 function enterPage(){
 loginBox.style.display="none";
 content.style.display="grid";
 loadPhotosRealtime();
 }
 
-// ADMIN AUTO
 if(isAdmin){
 adminTools.style.display="block";
 enterPage();
 }
 
-// USER AUTO
 if(localStorage.getItem("userAccess")==="true"){
 enterPage();
 }
 
-// ===== UPLOAD FOTO =====
+// ===== UPLOAD =====
 fileInput.addEventListener("change",async()=>{
 
 for(let file of fileInput.files){
@@ -284,15 +266,19 @@ collection(db,"photos"),
 orderBy("created","desc")
 );
 
-
 onSnapshot(q,snap=>{
 
 gallery.innerHTML="";
 
 snap.forEach(d=>{
+
+const imgUrl=d.data().url;
+
 gallery.innerHTML+=`
 <div class="photo">
-<img src="${d.data().url}">
+<img src="${imgUrl}"
+oncontextmenu="return false"
+ondragstart="return false">
 </div>`;
 });
 });
@@ -325,7 +311,6 @@ document.body.appendChild(chatBox);
 
 const messagesDiv=document.getElementById("messages");
 const msgInput=document.getElementById("msgInput");
-
 const user=isAdmin?"admin":"user";
 
 msgInput.addEventListener("keydown",async e=>{
@@ -349,7 +334,6 @@ collection(db,"messages"),
 orderBy("time","desc")
 );
 
-
 onSnapshot(mq,snap=>{
 
 messagesDiv.innerHTML="";
@@ -361,20 +345,23 @@ const m=d.data();
 const name=m.user==="admin"?"Admin":"Ospite";
 const align=m.user==="admin"?"right":"left";
 
-// 🔗 Rendi link cliccabili
-const textWithLinks = m.text.replace(
-  /(https?:\/\/[^\s]+)/g,
-  '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+const textWithLinks=m.text.replace(
+/(https?:\/\/[^\s]+)/g,
+'<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
 );
 
 messagesDiv.innerHTML+=`
 <div style="margin-bottom:10px;text-align:${align}">
 <b>${name}:</b> ${textWithLinks}
 </div>`;
-
+});
 });
 
-
+// ===== BLOCCO TASTO DESTRO GLOBALE =====
+document.addEventListener("contextmenu",e=>{
+if(e.target.tagName==="IMG"){
+e.preventDefault();
+}
 });
 
 </script>
