@@ -141,11 +141,16 @@ window.checkPassword = async function () {
   const data = snap.data();
 
   if (pwd === data.password) {
+
+    localStorage.setItem("userAccess", "true");
+
     enterPage();
+
   } else {
     alert("Password errata");
   }
 };
+
 
 // ================= ENTRA =================
 function enterPage() {
@@ -157,7 +162,16 @@ function enterPage() {
 
 // ================= ADMIN =================
 if (isAdmin) {
+
   adminTools.style.display = "flex";
+
+  loginBox.style.display = "none";
+  content.style.display = "grid";
+
+  loadPhotosRealtime();
+
+}
+if (localStorage.getItem("userAccess") === "true") {
   enterPage();
 }
 
