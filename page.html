@@ -120,6 +120,14 @@ header button{
   color:white;
 }
 
+/* DRAG AREA */
+
+.gallery.dragover{
+  outline:3px dashed #667eea;
+  background:rgba(102,126,234,0.1);
+}
+
+
 </style>
 </head>
 <body>
@@ -286,7 +294,7 @@ const originalUrl = d.data().url;
 // WATERMARK DIAGONALE CENTRATO
 const imgUrl = originalUrl.replace(
   "/upload/",
-  "/upload/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
+  "/upload/l_text:Arial_120:©%20Protetta da Copyright,o_15,a_45,g_center/"
 );
 
 
@@ -402,6 +410,57 @@ window.deletePage = async function () {
 
   location.reload();
 };
+
+// ===== DRAG & DROP =====
+
+// SOLO ADMIN
+if (isAdmin) {
+
+  // DRAG OVER
+  gallery.addEventListener("dragover", e => {
+    e.preventDefault();
+    gallery.classList.add("dragover");
+  });
+
+  // DRAG LEAVE
+  gallery.addEventListener("dragleave", () => {
+    gallery.classList.remove("dragover");
+  });
+
+  // DROP FILE
+  gallery.addEventListener("drop", async e => {
+
+    e.preventDefault();
+    gallery.classList.remove("dragover");
+
+    const files = e.dataTransfer.files;
+
+    for (let file of files) {
+
+      if (!file.type.startsWith("image/")) continue;
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "sito-foto");
+
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
+        {
+          method: "POST",
+          body: fd
+        }
+      );
+
+      const data = await res.json();
+
+      await addDoc(collection(db,"photos"),{
+        url: data.secure_url,
+        created: Date.now()
+      });
+    }
+  });
+}
+
 
 </script>
 
