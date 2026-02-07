@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -133,7 +134,6 @@ header button{
 }
 
 /* ===== CHAT ===== */
-/* ===== CHAT ===== */
 
 .chat{
   position:fixed;
@@ -144,8 +144,6 @@ header button{
   display:flex;
   flex-direction:column;
 }
-
-/* AREA INPUT */
 
 .chat-input{
   padding:15px;
@@ -162,8 +160,6 @@ header button{
   color:white;
 }
 
-/* MESSAGGI */
-
 .messages{
   flex:1;
   overflow-y:auto;
@@ -173,8 +169,6 @@ header button{
   gap:10px;
 }
 
-/* BOLLE */
-
 .msg{
   max-width:80%;
   padding:10px 14px;
@@ -183,15 +177,11 @@ header button{
   word-wrap:break-word;
 }
 
-/* ADMIN */
-
 .msg.admin{
   align-self:flex-end;
   background:#667eea;
   color:white;
 }
-
-/* UTENTE */
 
 .msg.user{
   align-self:flex-start;
@@ -214,6 +204,7 @@ header button{
 }
 
 </style>
+
 </head>
 <body>
 
@@ -223,8 +214,7 @@ header button{
 
 <div class="header-right">
 
-<button onclick="setGrid()">🧱</button>
-<button onclick="setFull()">🖼️</button>
+<button onclick="setGrid()">🧱</button> <button onclick="setFull()">🖼️</button>
 
 <div class="admin-tools" id="adminTools">
 <button onclick="fileInput.click()">➕ Carica foto</button>
@@ -265,33 +255,7 @@ projectId:"sito-foto-98234"
 });
 
 const db=getFirestore(app);
-// ===== LISTENER CONFIG REALTIME =====
 
-import { onSnapshot }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-onSnapshot(
-  doc(db,"page","config"),
-  snap=>{
-
-    // Pagina eliminata realtime
-    if(!snap.exists()){
-
-      localStorage.removeItem("userAccess");
-
-      if(isAdmin){
-        location.href="index.html";
-      }else{
-        location.href="deleted.html";
-      }
-
-    }
-
-  }
-);
-
-
-// ===== ELEMENTI =====
 const gallery=document.getElementById("gallery");
 const loginBox=document.getElementById("loginBox");
 const content=document.getElementById("content");
@@ -300,46 +264,48 @@ const fileInput=document.getElementById("fileInput");
 
 const isAdmin=localStorage.getItem("admin")==="true";
 
+// ===== LISTENER CONFIG REALTIME =====
+onSnapshot(doc(db,"page","config"),snap=>{
+
+if(!snap.exists()){
+
+localStorage.removeItem("userAccess");
+
+if(isAdmin){
+location.href="index.html";
+}else{
+location.href="deleted.html";
+}
+
+}
+
+});
+
 // ===== ACCESSO =====
 (async()=>{
 
-  const snap =
-    await getDoc(
-      doc(db,"page","config")
-    );
+const snap=await getDoc(doc(db,"page","config"));
 
-  // 🔴 Pagina eliminata
-  if(!snap.exists()){
+if(!snap.exists()){
 
-    localStorage.removeItem("userAccess");
+if(isAdmin){
+location.href="index.html";
+}else{
+location.href="deleted.html";
+}
 
-    if(isAdmin){
-      location.href="index.html";
-    }else{
-      location.href="deleted.html";
-    }
+return;
+}
 
-    return;
-  }
+if(isAdmin){
+enterPage();
+return;
+}
 
-  // 🟢 ADMIN entra diretto
-  if(isAdmin){
-    enterPage();
-    return;
-  }
-
-  // 🟡 UTENTE deve avere accesso salvato
-  if(localStorage.getItem("userAccess")==="true"){
-    enterPage();
-    return;
-  }
-
-  // 🔒 BLOCCA PAGINA
-  content.style.display="none";
-  loginBox.style.display="block";
+loginBox.style.display="block";
+content.style.display="none";
 
 })();
-
 
 // ===== LOGIN =====
 window.checkPassword=async()=>{
@@ -360,9 +326,12 @@ async function enterPage(){
 loginBox.style.display="none";
 content.style.display="grid";
 
-if(isAdmin) adminTools.style.display="flex";
+if(isAdmin)
+adminTools.style.display="flex";
 
 loadPhotosRealtime();
+startChat();
+
 }
 
 // ===== VIEW =====
@@ -434,183 +403,93 @@ gallery.innerHTML+=`
 });
 }
 
-// ===== CHAT =====
-// ===== CHAT =====
+// ===== CHAT (PARTE SOLO DOPO LOGIN) =====
+function startChat(){
 
-const headerHeight =
-  document.querySelector("header").offsetHeight;
+const headerHeight=document.querySelector("header").offsetHeight;
 
-const chat = document.createElement("div");
-chat.className = "chat";
-chat.style.top = headerHeight + "px";
-chat.style.height =
-  `calc(100vh - ${headerHeight}px)`;
+const chat=document.createElement("div");
+chat.className="chat";
+chat.style.top=headerHeight+"px";
+chat.style.height=`calc(100vh - ${headerHeight}px)`;
 
-chat.innerHTML = `
+chat.innerHTML=`
 
 <div class="chat-input">
-  <input id="msgInput"
-  placeholder="Scrivi un messaggio...">
+<input id="msgInput" placeholder="Scrivi un messaggio...">
 </div>
 
-<div class="messages"
-     id="messages"></div>
+<div class="messages" id="messages"></div>
 
 `;
 
 document.body.appendChild(chat);
 
-const messagesDiv =
-  document.getElementById("messages");
+const messagesDiv=document.getElementById("messages");
+const msgInput=document.getElementById("msgInput");
+const user=isAdmin?"admin":"user";
 
-const msgInput =
-  document.getElementById("msgInput");
+msgInput.addEventListener("keydown",async e=>{
+if(e.key==="Enter"){
 
-const user =
-  isAdmin ? "admin" : "user";
+const text=msgInput.value.trim();
+if(!text) return;
 
+msgInput.value="";
 
-// ===== INVIO =====
-
-msgInput.addEventListener(
-  "keydown",
-  async e => {
-
-  if (e.key === "Enter") {
-
-    const text =
-      msgInput.value.trim();
-
-    if (!text) return;
-
-    msgInput.value = "";
-
-    await addDoc(
-      collection(db,"messages"),
-      {
-        text,
-        user,
-        time: Date.now()
-      }
-    );
-  }
+await addDoc(collection(db,"messages"),{
+text,user,time:Date.now()
+});
+}
 });
 
+onSnapshot(
+query(collection(db,"messages"),orderBy("time","desc")),
+snap=>{
 
-// ===== START CHAT =====
+messagesDiv.innerHTML="";
 
-async function startChat(){
+snap.forEach(d=>{
 
-  const snap =
-    await getDoc(
-      doc(db,"page","config")
-    );
+const m=d.data();
+const role=m.user==="admin"?"admin":"user";
+const name=m.user==="admin"?"Admin":"Ospite";
 
-  // Pagina eliminata
-  if(!snap.exists()){
-    showDeleted();
-    return;
-  }
+const text=m.text.replace(
+/(https?:\/\/[^\s]+)/g,
+'<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+);
 
-  const mq = query(
-    collection(db,"messages"),
-    orderBy("time","desc")
-  );
-
-  onSnapshot(mq, snap=>{
-
-    messagesDiv.innerHTML="";
-
-    snap.forEach(d=>{
-
-      const m = d.data();
-
-      const role =
-        m.user==="admin"
-        ? "admin"
-        : "user";
-
-      const name =
-        m.user==="admin"
-        ? "Admin"
-        : "Ospite";
-
-      const text =
-        m.text.replace(
-          /(https?:\/\/[^\s]+)/g,
-          '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
-        );
-
-      messagesDiv.innerHTML += `
-        <div class="msg ${role}">
-          <b>${name}:</b><br>
-          ${text}
-        </div>`;
-    });
-
-  });
-
+messagesDiv.innerHTML+=`
+<div class="msg ${role}">
+<b>${name}:</b><br>${text}
+</div>`;
+});
+});
 }
-
-
-// AVVIA CHAT QUANDO ENTRI
-startChat();
-
 
 // ===== DELETE =====
-window.deletePage = async ()=>{
+window.deletePage=async()=>{
 
-  if(!confirm("Eliminare pagina?"))
-    return;
+if(!confirm("Eliminare pagina?")) return;
 
-  // Elimina config
-  await deleteDoc(
-    doc(db,"page","config")
-  );
+await deleteDoc(doc(db,"page","config"));
 
-  // Elimina foto
-  const photos =
-    await getDocs(
-      collection(db,"photos")
-    );
+const photos=await getDocs(collection(db,"photos"));
+for(const p of photos.docs) await deleteDoc(p.ref);
 
-  for(const p of photos.docs){
-    await deleteDoc(p.ref);
-  }
+const msgs=await getDocs(collection(db,"messages"));
+for(const m of msgs.docs) await deleteDoc(m.ref);
 
-  // Elimina messaggi
-  const msgs =
-    await getDocs(
-      collection(db,"messages")
-    );
+localStorage.removeItem("userAccess");
 
-  for(const m of msgs.docs){
-    await deleteDoc(m.ref);
-  }
-
-  // Reset accessi
-  localStorage.removeItem("userAccess");
-
-  // Redirect diversi
-  if(isAdmin){
-
-    // ADMIN → torna index
-    location.href="index.html";
-
-  }else{
-
-    // UTENTE → pagina eliminata
-    location.href="deleted.html";
-
-  }
+if(isAdmin){
+location.href="index.html";
+}else{
+location.href="deleted.html";
+}
 
 };
-
-
-// ===== DELETED =====
-function showDeleted(){
-document.body.innerHTML="<h1 style='text-align:center;margin-top:40vh'>Pagina eliminata</h1>";
-}
 
 // ===== DRAG =====
 if(isAdmin){
@@ -637,5 +516,6 @@ uploadFiles(e.dataTransfer.files);
 }
 
 </script>
+
 </body>
 </html>
