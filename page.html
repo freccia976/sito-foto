@@ -267,11 +267,17 @@ const m=d.data();
 const name=m.user==="admin"?"Admin":"Ospite";
 const align=m.user==="admin"?"right":"left";
 
-messagesDiv.innerHTML+=`
+// 🔗 Rendi link cliccabili
+const textWithLinks = m.text.replace(
+  /(https?:\/\/[^\s]+)/g,
+  '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+);
 
+messagesDiv.innerHTML+=`
 <div style="margin-bottom:10px;text-align:${align}">
-<b>${name}:</b> ${m.text}
+<b>${name}:</b> ${textWithLinks}
 </div>`;
+
 });
 
 
