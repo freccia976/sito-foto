@@ -151,7 +151,8 @@ window.checkPassword = async function () {
 function enterPage() {
   loginBox.style.display = "none";
   content.style.display = "grid";
-  loadPhotos();
+  loadPhotosRealtime();
+
 }
 
 // ================= ADMIN =================
@@ -188,21 +189,39 @@ fileInput.addEventListener("change", async () => {
     });
   }
 
-  loadPhotos();
+  loadPhotosRealtime();
+
 });
 
 // ================= LOAD GALLERY =================
-async function loadPhotos() {
+import {
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  gallery.innerHTML = "";
+// REALTIME GALLERY
+function loadPhotosRealtime() {
 
-  const snap = await getDocs(collection(db, "photos"));
+  const q = query(
+    collection(db, "photos"),
+    orderBy("created")
+  );
 
-  snap.forEach(doc => {
-    const div = document.createElement("div");
-    div.className = "photo";
-    div.innerHTML = `<img src="${doc.data().url}">`;
-    gallery.appendChild(div);
+  onSnapshot(q, snap => {
+
+    gallery.innerHTML = "";
+
+    snap.forEach(doc => {
+
+      const div = document.createElement("div");
+      div.className = "photo";
+
+      div.innerHTML =
+        `<img src="${doc.data().url}">`;
+
+      gallery.appendChild(div);
+    });
   });
 }
 
@@ -219,9 +238,9 @@ const chatBox = document.createElement("div");
 
 chatBox.style.position = "fixed";
 chatBox.style.right = "0";
-chatBox.style.top = "0";
+chatBox.style.top = "80px";
 chatBox.style.width = "300px";
-chatBox.style.height = "100vh";
+chatBox.style.height = "calc(100vh - 80px)";
 chatBox.style.background = "#15182d";
 chatBox.style.display = "flex";
 chatBox.style.flexDirection = "column";
