@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Pannello Admin</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      width: 360px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      background: #667eea;
+      color: white;
+      cursor: pointer;
+    }
+
+    .logout {
+      margin-top: 20px;
+      background: #e53e3e;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🔐 Admin</h1>
+
+  <input type="password" id="pagePass" placeholder="Password pagina">
+
+  <button onclick="createPage()">➕ Crea pagina</button>
+
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<script type="module">
+
+// ================= FIREBASE IMPORT =================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ================= CONFIG TUA =================
+const firebaseConfig = {
+  apiKey: "AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
+  authDomain: "sito-foto-98234.firebaseapp.com",
+  projectId: "sito-foto-98234",
+  storageBucket: "sito-foto-98234.firebasestorage.app",
+  messagingSenderId: "1014303170766",
+  appId: "1:1014303170766:web:1a96871b022c7401ef309f"
+};
+
+// ================= INIT =================
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ================= LOGIN CHECK =================
+if (localStorage.getItem("admin") !== "true") {
+  window.location.href = "index.html";
+}
+
+// ================= LOGOUT =================
+window.logout = function () {
+  localStorage.removeItem("admin");
+  window.location.href = "index.html";
+};
+
+// ================= CREA PAGINA =================
+window.createPage = async function () {
+
+  const password =
+    document.getElementById("pagePass").value.trim();
+
+  if (!password) {
+    alert("Inserisci una password");
+    return;
+  }
+
+  try {
+
+    await setDoc(doc(db, "page", "config"), {
+      active: true,
+      password: password,
+      created: Date.now()
+    });
+
+    alert("Pagina creata!");
+
+    window.location.href = "page.html";
+
+  } catch (err) {
+    console.error(err);
+    alert("Errore creazione pagina");
+  }
+};
+
+</script>
+
+</body>
+</html>
