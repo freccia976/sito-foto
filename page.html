@@ -281,13 +281,33 @@ alert("Password errata");
 // ===== ENTER =====
 async function enterPage(){
 
-const snap=await getDoc(doc(db,"page","config"));
-if(!snap.exists()) return showDeleted();
+  const snap = await getDoc(doc(db,"page","config"));
 
-loginBox.style.display="none";
-content.style.display="grid";
-loadPhotosRealtime();
+  if(!snap.exists()){
+    showDeleted();
+    return;
+  }
+
+  // 🔐 ADMIN BYPASS
+  if(isAdmin){
+    loginBox.style.display="none";
+    content.style.display="grid";
+    adminTools.style.display="flex";
+    loadPhotosRealtime();
+    return;
+  }
+
+  // 🔐 UTENTE DEVE AVERE ACCESSO
+  if(localStorage.getItem("userAccess")!=="true"){
+    loginBox.style.display="block";
+    return;
+  }
+
+  loginBox.style.display="none";
+  content.style.display="grid";
+  loadPhotosRealtime();
 }
+
 
 if(isAdmin){
 adminTools.style.display="block";
