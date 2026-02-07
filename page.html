@@ -5,13 +5,19 @@
 <title>Pagina privata</title>
 
 <style>
-* { box-sizing:border-box;font-family:Arial,sans-serif; }
+
+*{
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
 
 body{
   margin:0;
   background:#0f1220;
   color:#eaeaf0;
 }
+
+/* ================= HEADER ================= */
 
 header{
   background:#15182d;
@@ -22,7 +28,28 @@ header{
   border-bottom:1px solid #23264a;
 }
 
-.admin-tools{display:none;}
+.header-right{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+header button{
+  background:#667eea;
+  border:none;
+  color:white;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* ================= ADMIN ================= */
+
+.admin-tools{
+  display:none;
+}
+
+/* ================= LAYOUT ================= */
 
 .layout{
   display:grid;
@@ -30,11 +57,15 @@ header{
   padding:20px 40px;
 }
 
+/* ================= GALLERY GRID ================= */
+
 .gallery{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
   gap:12px;
 }
+
+/* ================= FOTO ================= */
 
 .photo{
   background:#1c2040;
@@ -43,12 +74,29 @@ header{
   aspect-ratio:1/1;
 }
 
-
 .photo img{
   width:100%;
   height:100%;
   object-fit:cover;
 }
+
+/* ================= MODALITÀ INTERA ================= */
+
+.gallery.full{
+  grid-template-columns:1fr;
+}
+
+.gallery.full .photo{
+  height:calc(100vh - 140px);
+}
+
+.gallery.full img{
+  height:100%;
+  object-fit:contain;
+  background:black;
+}
+
+/* ================= LOGIN ================= */
 
 .login{
   max-width:400px;
@@ -58,30 +106,76 @@ header{
   border-radius:12px;
   text-align:center;
 }
+
+.login input{
+  width:100%;
+  padding:12px;
+  margin-bottom:20px;
+  border:none;
+  border-radius:6px;
+}
+
+.login button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:6px;
+  background:#667eea;
+  color:white;
+}
+
 </style>
 </head>
 <body>
 
+<!-- ================= HEADER ================= -->
+
 <header>
-<h1>📸 Pagina privata</h1>
-<div class="admin-tools" id="adminTools">
-<button onclick="fileInput.click()">➕ Carica foto</button>
-</div>
+
+  <h1>📸 Pagina privata</h1>
+
+  <div class="header-right">
+
+    <!-- VISTA PER TUTTI -->
+    <button onclick="setGrid()">🧱</button>
+    <button onclick="setFull()">🖼️</button>
+
+    <!-- SOLO ADMIN -->
+    <div class="admin-tools" id="adminTools">
+      <button onclick="fileInput.click()">➕ Carica foto</button>
+    </div>
+
+  </div>
+
 </header>
 
+<!-- ================= LOGIN ================= -->
+
 <div class="login" id="loginBox">
-<h2>Accesso riservato</h2>
-<input type="password" id="pwd" placeholder="Password">
-<button onclick="checkPassword()">Entra</button>
+
+  <h2>Accesso riservato</h2>
+
+  <input type="password" id="pwd" placeholder="Password">
+
+  <button onclick="checkPassword()">Entra</button>
+
 </div>
 
+<!-- ================= CONTENUTO ================= -->
+
 <div class="layout" id="content" style="display:none;">
-<div class="gallery" id="gallery"></div>
+
+  <div class="gallery" id="gallery"></div>
+
 </div>
+
+<!-- INPUT FILE NASCOSTO -->
 
 <input type="file" id="fileInput" multiple hidden>
 
+<!-- ================= SCRIPT ================= -->
 <script type="module">
+
 
 // ===== FIREBASE IMPORT UNICO =====
 import { initializeApp }
