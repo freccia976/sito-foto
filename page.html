@@ -231,19 +231,37 @@ const isAdmin=localStorage.getItem("admin")==="true";
 
 const snap=await getDoc(doc(db,"page","config"));
 
+// 🔴 Pagina eliminata
 if(!snap.exists()){
-showDeleted();
-return;
+
+  // Admin torna al pannello
+  if(isAdmin){
+    location.href="index.html";
+    return;
+  }
+
+  // Utente vede eliminata
+  showDeleted();
+  return;
 }
 
+// 🟢 Admin entra diretto
 if(isAdmin){
-enterPage();
-return;
+  enterPage();
+  return;
 }
 
+// 🟡 Utente deve avere accesso salvato
+if(localStorage.getItem("userAccess")==="true"){
+  enterPage();
+  return;
+}
+
+// 🔐 Altrimenti login
 loginBox.style.display="block";
 
 })();
+
 
 // ===== LOGIN =====
 window.checkPassword=async()=>{
@@ -382,26 +400,33 @@ messagesDiv.innerHTML+=`
 });
 
 // ===== DELETE =====
-window.deletePage=async()=>{
+window.deletePage = async ()=>{
 
 if(!confirm("Eliminare pagina?")) return;
 
+// Cancella config
 await deleteDoc(doc(db,"page","config"));
 
-const photos=await getDocs(collection(db,"photos"));
+// Cancella foto
+const photos = await getDocs(collection(db,"photos"));
 photos.forEach(p=>deleteDoc(p.ref));
 
-const msgs=await getDocs(collection(db,"messages"));
+// Cancella chat
+const msgs = await getDocs(collection(db,"messages"));
 msgs.forEach(m=>deleteDoc(m.ref));
 
-// 🔁 REDIRECT CORRETTO
+// Reset accessi
+localStorage.removeItem("userAccess");
+
+// 🔁 Redirect corretti
 if(isAdmin){
-location.href="admin.html";
+  location.href="index.html";
 }else{
-showDeleted();
+  showDeleted();
 }
 
 };
+
 
 // ===== DELETED =====
 function showDeleted(){
