@@ -103,23 +103,28 @@ header button{
 
 
 /* ===== FULL VIEW ===== */
-
 .gallery.full{
   grid-template-columns:1fr;
-  justify-items:center; /* centra */
+  justify-items:center;
+  gap:30px;
 }
 
 .gallery.full .photo{
-  background:transparent;
-  height:auto;
+  width:90%;
+  max-width:1200px;
+  height:80vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  border-radius:12px;
+  overflow:hidden;
 }
 
 .gallery.full img{
-  width:auto;        /* NON forzare */
-  max-width:90vw;   /* limite schermo */
-  height:auto;
-  max-height:80vh;  /* limite verticale */
-  object-fit:contain;
+  width:100%;
+  height:100%;
+  object-fit:contain; /* MOSTRA TUTTA */
 }
 
 /* ===== LOGIN ===== */
@@ -339,8 +344,9 @@ const gridUrl = originalUrl.replace(
 // FULL ORIGINALE
 const fullUrl = originalUrl.replace(
   "/upload/",
-  "/upload/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
+  "/upload/c_limit,w_1600,h_1600,q_auto:best,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
 );
+
 
 // SE MODALITÀ FULL
 const imgUrl = gallery.classList.contains("full")
