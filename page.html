@@ -442,6 +442,82 @@ flex-direction:column;">
 <h1>📸 Pagina eliminata</h1>
 </div>`;
 }
+// ===== DRAG SU TUTTA PAGINA =====
+
+if (isAdmin) {
+
+  let overlay = null;
+
+  // DRAG ENTER
+  document.addEventListener("dragenter", e => {
+
+    e.preventDefault();
+
+    if (!overlay) {
+
+      overlay = document.createElement("div");
+      overlay.className = "drag-overlay";
+      overlay.innerText = "Rilascia le foto per caricarle";
+
+      document.body.appendChild(overlay);
+    }
+  });
+
+  // DRAG OVER
+  document.addEventListener("dragover", e => {
+    e.preventDefault();
+  });
+
+  // DRAG LEAVE
+  document.addEventListener("dragleave", e => {
+
+    if (e.clientX === 0 && e.clientY === 0) {
+
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+      }
+    }
+  });
+
+  // DROP FILES
+  document.addEventListener("drop", async e => {
+
+    e.preventDefault();
+
+    if (overlay) {
+      overlay.remove();
+      overlay = null;
+    }
+
+    const files = e.dataTransfer.files;
+
+    for (let file of files) {
+
+      if (!file.type.startsWith("image/"))
+        continue;
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "sito-foto");
+
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
+        {
+          method: "POST",
+          body: fd
+        }
+      );
+
+      const data = await res.json();
+
+      await addDoc(collection(db, "photos"), {
+        url: data.secure_url,
+        created: Date.now()
+      });
+    }
+  });
+}
 
 </script>
 </body>
