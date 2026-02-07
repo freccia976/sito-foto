@@ -283,16 +283,20 @@ const snap=await getDoc(doc(db,"page","config"));
 // 🔴 Pagina eliminata
 if(!snap.exists()){
 
-  // Admin torna al pannello
+  // Ferma accessi salvati
+  localStorage.removeItem("userAccess");
+
   if(isAdmin){
     location.href="index.html";
-    return;
+  }else{
+    showDeleted();
   }
 
-  // Utente vede eliminata
-  showDeleted();
   return;
 }
+
+
+
 
 // 🟢 Admin entra diretto
 if(isAdmin){
@@ -441,7 +445,42 @@ msgInput.value="";
 }
 });
 
-onSnapshot(query(collection(db,"messages"),orderBy("time","desc")),snap=>{
+async function startChat(){
+
+const snap = await getDoc(doc(db,"page","config"));
+
+if(!snap.exists()){
+  showDeleted();
+  return;
+}
+
+onSnapshot(
+  query(collection(db,"messages"),orderBy("time","desc")),
+  snap=>{
+
+    messagesDiv.innerHTML="";
+
+    snap.forEach(d=>{
+
+      const m=d.data();
+      const role=m.user==="admin"?"admin":"user";
+      const name=m.user==="admin"?"Admin":"Ospite";
+
+      const text=m.text.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
+      );
+
+      messagesDiv.innerHTML+=`
+      <div class="msg ${role}">
+        <b>${name}:</b><br>${text}
+      </div>`;
+    });
+
+  }
+);
+}
+
 
 messagesDiv.innerHTML="";
 
@@ -461,28 +500,31 @@ messagesDiv.innerHTML += `
 </div>`;
 
 });
-});
 
 // ===== DELETE =====
 window.deletePage = async ()=>{
 
 if(!confirm("Eliminare pagina?")) return;
 
-// Cancella config
+// Elimina config prima
 await deleteDoc(doc(db,"page","config"));
 
-// Cancella foto
+// Elimina foto
 const photos = await getDocs(collection(db,"photos"));
-photos.forEach(p=>deleteDoc(p.ref));
+for(const p of photos.docs){
+  await deleteDoc(p.ref);
+}
 
-// Cancella chat
+// Elimina messaggi
 const msgs = await getDocs(collection(db,"messages"));
-msgs.forEach(m=>deleteDoc(m.ref));
+for(const m of msgs.docs){
+  await deleteDoc(m.ref);
+}
 
 // Reset accessi
 localStorage.removeItem("userAccess");
 
-// 🔁 Redirect corretti
+// Redirect
 if(isAdmin){
   location.href="index.html";
 }else{
@@ -490,6 +532,7 @@ if(isAdmin){
 }
 
 };
+
 
 
 // ===== DELETED =====
