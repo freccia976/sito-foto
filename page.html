@@ -32,15 +32,17 @@ header{
 
 .gallery{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:20px;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;
 }
 
 .photo{
   background:#1c2040;
   border-radius:10px;
   overflow:hidden;
+  aspect-ratio:1/1;
 }
+
 
 .photo img{
   width:100%;
@@ -185,8 +187,9 @@ function loadPhotosRealtime(){
 
 const q=query(
 collection(db,"photos"),
-orderBy("created")
+orderBy("created","desc")
 );
+
 
 onSnapshot(q,snap=>{
 
@@ -249,8 +252,9 @@ time:Date.now()
 
 const mq=query(
 collection(db,"messages"),
-orderBy("time")
+orderBy("time","desc")
 );
+
 
 onSnapshot(mq,snap=>{
 
@@ -264,12 +268,13 @@ const name=m.user==="admin"?"Admin":"Ospite";
 const align=m.user==="admin"?"right":"left";
 
 messagesDiv.innerHTML+=`
+
 <div style="margin-bottom:10px;text-align:${align}">
 <b>${name}:</b> ${m.text}
 </div>`;
 });
 
-messagesDiv.scrollTop=messagesDiv.scrollHeight;
+
 });
 
 </script>
