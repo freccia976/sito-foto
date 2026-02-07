@@ -5,28 +5,56 @@
 <title>Pagina privata</title>
 
 <style>
-body {
+* { box-sizing:border-box;font-family:Arial,sans-serif; }
+
+body{
   margin:0;
   background:#0f1220;
-  color:white;
-  font-family:Arial;
+  color:#eaeaf0;
 }
 
-header {
+header{
   background:#15182d;
+  padding:20px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #23264a;
+}
+
+.admin-tools{display:none;}
+
+.layout{
+  display:grid;
+  grid-template-columns:1fr;
   padding:20px 40px;
 }
 
-.gallery {
+.gallery{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:20px;
-  padding:20px 40px;
 }
 
-.photo img {
-  width:100%;
+.photo{
+  background:#1c2040;
   border-radius:10px;
+  overflow:hidden;
+}
+
+.photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.login{
+  max-width:400px;
+  margin:120px auto;
+  background:#15182d;
+  padding:40px;
+  border-radius:12px;
+  text-align:center;
 }
 </style>
 </head>
@@ -34,17 +62,22 @@ header {
 
 <header>
 <h1>📸 Pagina privata</h1>
-<button id="uploadBtn" style="display:none;">Carica foto</button>
+<div class="admin-tools" id="adminTools">
+<button onclick="fileInput.click()">➕ Carica foto</button>
+</div>
 </header>
 
-<div id="loginBox" style="padding:40px;">
-<input id="pwd" placeholder="Password">
+<div class="login" id="loginBox">
+<h2>Accesso riservato</h2>
+<input type="password" id="pwd" placeholder="Password">
 <button onclick="checkPassword()">Entra</button>
 </div>
 
-<div class="gallery" id="gallery" style="display:none;"></div>
+<div class="layout" id="content" style="display:none;">
+<div class="gallery" id="gallery"></div>
+</div>
 
-<input type="file" id="fileInput" hidden multiple>
+<input type="file" id="fileInput" multiple hidden>
 
 <script type="module">
 
@@ -65,101 +98,180 @@ import {
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ===== CONFIG =====
-const firebaseConfig = {
-  apiKey: "AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
-  authDomain: "sito-foto-98234.firebaseapp.com",
-  projectId: "sito-foto-98234",
-  storageBucket: "sito-foto-98234.firebasestorage.app",
-  messagingSenderId: "1014303170766",
-  appId: "1:1014303170766:web:1a96871b022c7401ef309f"
+const firebaseConfig={
+apiKey:"AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
+authDomain:"sito-foto-98234.firebaseapp.com",
+projectId:"sito-foto-98234",
+storageBucket:"sito-foto-98234.firebasestorage.app",
+messagingSenderId:"1014303170766",
+appId:"1:1014303170766:web:1a96871b022c7401ef309f"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
 // ===== ELEMENTI =====
-const gallery = document.getElementById("gallery");
-const loginBox = document.getElementById("loginBox");
-const uploadBtn = document.getElementById("uploadBtn");
-const fileInput = document.getElementById("fileInput");
+const gallery=document.getElementById("gallery");
+const loginBox=document.getElementById("loginBox");
+const content=document.getElementById("content");
+const adminTools=document.getElementById("adminTools");
+const fileInput=document.getElementById("fileInput");
 
-const isAdmin = localStorage.getItem("admin") === "true";
+const isAdmin=localStorage.getItem("admin")==="true";
 
 // ===== LOGIN PASSWORD =====
-window.checkPassword = async function() {
+window.checkPassword=async function(){
 
-  const pwd = document.getElementById("pwd").value;
+const pwd=document.getElementById("pwd").value;
 
-  const snap = await getDoc(doc(db,"page","config"));
+const snap=await getDoc(doc(db,"page","config"));
 
-  if (pwd === snap.data().password) {
-    enterPage();
-  } else {
-    alert("Password errata");
-  }
+if(!snap.exists()){
+alert("Pagina non attiva");
+return;
+}
+
+if(pwd===snap.data().password){
+localStorage.setItem("userAccess","true");
+enterPage();
+}else{
+alert("Password errata");
+}
 };
 
 // ===== ENTRA =====
-function enterPage() {
-
-  loginBox.style.display="none";
-  gallery.style.display="grid";
-
-  if (isAdmin) uploadBtn.style.display="block";
-
-  loadPhotos();
+function enterPage(){
+loginBox.style.display="none";
+content.style.display="grid";
+loadPhotosRealtime();
 }
 
-// ===== ADMIN AUTO =====
-if (isAdmin) enterPage();
+// ADMIN AUTO
+if(isAdmin){
+adminTools.style.display="block";
+enterPage();
+}
 
-// ===== UPLOAD =====
-uploadBtn.onclick=()=>fileInput.click();
+// USER AUTO
+if(localStorage.getItem("userAccess")==="true"){
+enterPage();
+}
 
-fileInput.addEventListener("change", async()=>{
+// ===== UPLOAD FOTO =====
+fileInput.addEventListener("change",async()=>{
 
-  for (let file of fileInput.files){
+for(let file of fileInput.files){
 
-    const fd=new FormData();
-    fd.append("file",file);
-    fd.append("upload_preset","sito-foto");
+const fd=new FormData();
+fd.append("file",file);
+fd.append("upload_preset","sito-foto");
 
-    const res=await fetch(
-      "https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
-      {method:"POST",body:fd}
-    );
+const res=await fetch(
+"https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
+{method:"POST",body:fd}
+);
 
-    const data=await res.json();
+const data=await res.json();
 
-    await addDoc(collection(db,"photos"),{
-      url:data.secure_url,
-      created:Date.now()
-    });
-  }
+await addDoc(collection(db,"photos"),{
+url:data.secure_url,
+created:Date.now()
+});
+}
 });
 
 // ===== GALLERY REALTIME =====
-function loadPhotos(){
+function loadPhotosRealtime(){
 
-  const q=query(
-    collection(db,"photos"),
-    orderBy("created")
-  );
+const q=query(
+collection(db,"photos"),
+orderBy("created")
+);
 
-  onSnapshot(q,snap=>{
+onSnapshot(q,snap=>{
 
-    gallery.innerHTML="";
+gallery.innerHTML="";
 
-    snap.forEach(d=>{
-      gallery.innerHTML+=
-        `<div class="photo">
-           <img src="${d.data().url}">
-         </div>`;
-    });
-  });
+snap.forEach(d=>{
+gallery.innerHTML+=`
+<div class="photo">
+<img src="${d.data().url}">
+</div>`;
+});
+});
 }
 
-</script>
+// ===== CHAT =====
+const chatBox=document.createElement("div");
 
+chatBox.style.position="fixed";
+chatBox.style.right="0";
+chatBox.style.top="80px";
+chatBox.style.width="300px";
+chatBox.style.height="calc(100vh - 80px)";
+chatBox.style.background="#15182d";
+chatBox.style.display="flex";
+chatBox.style.flexDirection="column";
+chatBox.style.borderLeft="1px solid #23264a";
+
+chatBox.innerHTML=`
+<div style="padding:15px;border-bottom:1px solid #23264a;">
+<input id="msgInput"
+placeholder="Scrivi..."
+style="width:100%;padding:10px;border:none;border-radius:6px;">
+</div>
+<div id="messages"
+style="flex:1;overflow-y:auto;padding:15px;"></div>
+`;
+
+document.body.appendChild(chatBox);
+
+const messagesDiv=document.getElementById("messages");
+const msgInput=document.getElementById("msgInput");
+
+const user=isAdmin?"admin":"user";
+
+msgInput.addEventListener("keydown",async e=>{
+if(e.key==="Enter"){
+
+const text=msgInput.value.trim();
+if(!text)return;
+
+msgInput.value="";
+
+await addDoc(collection(db,"messages"),{
+text,
+user,
+time:Date.now()
+});
+}
+});
+
+const mq=query(
+collection(db,"messages"),
+orderBy("time")
+);
+
+onSnapshot(mq,snap=>{
+
+messagesDiv.innerHTML="";
+
+snap.forEach(d=>{
+
+const m=d.data();
+
+const name=m.user==="admin"?"Admin":"Ospite";
+const align=m.user==="admin"?"right":"left";
+
+messagesDiv.innerHTML+=`
+<div style="margin-bottom:10px;text-align:${align}">
+<b>${name}:</b> ${m.text}
+</div>`;
+});
+
+messagesDiv.scrollTop=messagesDiv.scrollHeight;
+});
+
+</script>
 </body>
 </html>
