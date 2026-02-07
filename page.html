@@ -206,6 +206,74 @@ async function loadPhotos() {
   });
 }
 
+// ================= CHAT =================
+
+import {
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const chatBox = document.createElement("div");
+chatBox.style.position = "fixed";
+chatBox.style.right = "20px";
+chatBox.style.bottom = "20px";
+chatBox.style.width = "260px";
+chatBox.style.background = "#15182d";
+chatBox.style.padding = "10px";
+chatBox.style.borderRadius = "10px";
+
+chatBox.innerHTML = `
+<div id="messages" style="height:200px;overflow:auto;"></div>
+<input id="msgInput" placeholder="Scrivi..." style="width:100%;margin-top:5px;">
+`;
+
+document.body.appendChild(chatBox);
+
+const messagesDiv = document.getElementById("messages");
+const msgInput = document.getElementById("msgInput");
+
+const user = isAdmin ? "admin" : "user";
+
+// INVIO
+msgInput.addEventListener("keydown", async e => {
+  if (e.key === "Enter") {
+
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    msgInput.value = "";
+
+    await addDoc(collection(db, "messages"), {
+      text,
+      user,
+      time: Date.now()
+    });
+  }
+});
+
+// RICEZIONE REALTIME
+const q = query(collection(db, "messages"), orderBy("time"));
+
+onSnapshot(q, snap => {
+
+  messagesDiv.innerHTML = "";
+
+  snap.forEach(doc => {
+    const m = doc.data();
+
+    messagesDiv.innerHTML += `
+      <div style="margin:4px 0;
+        text-align:${m.user === "admin" ? "right" : "left"}">
+        ${m.text}
+      </div>
+    `;
+  });
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+
+
 </script>
 
 </body>
