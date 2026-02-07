@@ -106,17 +106,20 @@ header button{
 
 .gallery.full{
   grid-template-columns:1fr;
+  justify-items:center; /* centra */
 }
 
 .gallery.full .photo{
+  background:transparent;
   height:auto;
 }
 
 .gallery.full img{
-  width:100%;
+  width:auto;        /* NON forzare */
+  max-width:90vw;   /* limite schermo */
   height:auto;
+  max-height:80vh;  /* limite verticale */
   object-fit:contain;
-  background:black;
 }
 
 /* ===== LOGIN ===== */
