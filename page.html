@@ -479,26 +479,46 @@ messagesDiv.innerHTML+=`
 });
 }
 
-// ===== DELETE =====
-window.deletePage=async()=>{
+// ===== DELETE PAGE COMPLETO =====
+window.deletePage = async ()=>{
 
-if(!confirm("Eliminare pagina?")) return;
+  if(!confirm("Eliminare pagina e TUTTI i dati?"))
+    return;
 
-await deleteDoc(doc(db,"page","config"));
+  // 1️⃣ Cancella CONFIG
+  await deleteDoc(doc(db,"page","config"));
 
-const photos=await getDocs(collection(db,"photos"));
-for(const p of photos.docs) await deleteDoc(p.ref);
+  // 2️⃣ Cancella FOTO
+  const photosSnap =
+    await getDocs(collection(db,"photos"));
 
-const msgs=await getDocs(collection(db,"messages"));
-for(const m of msgs.docs) await deleteDoc(m.ref);
+  for(const p of photosSnap.docs){
+    await deleteDoc(p.ref);
+  }
 
-localStorage.removeItem("userAccess");
+  // 3️⃣ Cancella CHAT
+  const msgSnap =
+    await getDocs(collection(db,"messages"));
 
-if(isAdmin){
-location.href="index.html";
-}else{
-location.href="deleted.html";
-}
+  for(const m of msgSnap.docs){
+    await deleteDoc(m.ref);
+  }
+
+  // 4️⃣ Reset accessi
+  localStorage.removeItem("userAccess");
+
+  // 5️⃣ Redirect diversi
+  if(isAdmin){
+
+    // Admin torna a creare nuova pagina
+    location.href="admin.html";
+
+  }else{
+
+    // Utente pagina eliminata
+    location.href="deleted.html";
+
+  }
 
 };
 
