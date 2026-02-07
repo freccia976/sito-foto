@@ -120,11 +120,20 @@ header button{
   color:white;
 }
 
-/* DRAG AREA */
+/* ===== DRAG OVERLAY ===== */
 
-.gallery.dragover{
-  outline:3px dashed #667eea;
-  background:rgba(102,126,234,0.1);
+.drag-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(102,126,234,0.15);
+  border:4px dashed #667eea;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:28px;
+  color:white;
+  z-index:9999;
+  pointer-events:none;
 }
 
 
@@ -411,27 +420,52 @@ window.deletePage = async function () {
   location.reload();
 };
 
-// ===== DRAG & DROP =====
+// ===== DRAG SU TUTTA PAGINA =====
 
-// SOLO ADMIN
 if (isAdmin) {
 
-  // DRAG OVER
-  gallery.addEventListener("dragover", e => {
+  let overlay = null;
+
+  // DRAG ENTER
+  document.addEventListener("dragenter", e => {
+
     e.preventDefault();
-    gallery.classList.add("dragover");
+
+    if (!overlay) {
+
+      overlay = document.createElement("div");
+      overlay.className = "drag-overlay";
+      overlay.innerText = "Rilascia le foto per caricarle";
+
+      document.body.appendChild(overlay);
+    }
+  });
+
+  // DRAG OVER
+  document.addEventListener("dragover", e => {
+    e.preventDefault();
   });
 
   // DRAG LEAVE
-  gallery.addEventListener("dragleave", () => {
-    gallery.classList.remove("dragover");
+  document.addEventListener("dragleave", e => {
+
+    if (e.clientX === 0 && e.clientY === 0) {
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+      }
+    }
   });
 
-  // DROP FILE
-  gallery.addEventListener("drop", async e => {
+  // DROP
+  document.addEventListener("drop", async e => {
 
     e.preventDefault();
-    gallery.classList.remove("dragover");
+
+    if (overlay) {
+      overlay.remove();
+      overlay = null;
+    }
 
     const files = e.dataTransfer.files;
 
@@ -460,6 +494,7 @@ if (isAdmin) {
     }
   });
 }
+
 
 
 </script>
