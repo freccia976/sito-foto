@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Pagina privata</title>
+
+<style>
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+body {
+  margin: 0;
+  background: #0f1220;
+  color: #eaeaf0;
+  min-height: 100vh;
+}
+
+header {
+  background: #15182d;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #23264a;
+}
+
+.admin-tools { display: none; gap: 12px; }
+.admin-tools button {
+  background: #667eea;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 20px;
+  padding: 20px 40px;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.photo {
+  background: #1c2040;
+  border-radius: 10px;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.login {
+  max-width: 400px;
+  margin: 120px auto;
+  background: #15182d;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>📸 Pagina privata</h1>
+<div class="admin-tools" id="adminTools">
+<button onclick="fileInput.click()">➕ Carica foto</button>
+</div>
+</header>
+
+<div class="login" id="loginBox">
+<h2>Accesso riservato</h2>
+<input type="password" id="pwd" placeholder="Password">
+<button onclick="checkPassword()">Entra</button>
+</div>
+
+<div class="layout" id="content" style="display:none;">
+<div class="gallery" id="gallery"></div>
+</div>
+
+<input type="file" id="fileInput" multiple accept="image/*" hidden>
+
+<!-- ================= SCRIPT ================= -->
+<script type="module">
+
+// 🔥 FIREBASE IMPORT
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔧 CONFIG TUA
+const firebaseConfig = {
+  apiKey: "AIzaSyBcexeHnAQ-ee5q5ZUT_7SqaMS-aSWZdcY",
+  authDomain: "sito-foto-98234.firebaseapp.com",
+  projectId: "sito-foto-98234",
+  storageBucket: "sito-foto-98234.firebasestorage.app",
+  messagingSenderId: "1014303170766",
+  appId: "1:1014303170766:web:1a96871b022c7401ef309f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ================= ELEMENTI =================
+const gallery = document.getElementById("gallery");
+const loginBox = document.getElementById("loginBox");
+const content = document.getElementById("content");
+const adminTools = document.getElementById("adminTools");
+const fileInput = document.getElementById("fileInput");
+
+const isAdmin = localStorage.getItem("admin") === "true";
+
+// ================= LOGIN PASSWORD =================
+window.checkPassword = async function () {
+
+  const pwd = document.getElementById("pwd").value;
+
+  const snap = await getDoc(doc(db, "page", "config"));
+
+  if (!snap.exists()) {
+    alert("Pagina non attiva");
+    return;
+  }
+
+  const data = snap.data();
+
+  if (pwd === data.password) {
+    enterPage();
+  } else {
+    alert("Password errata");
+  }
+};
+
+// ================= ENTRA =================
+function enterPage() {
+  loginBox.style.display = "none";
+  content.style.display = "grid";
+  loadPhotos();
+}
+
+// ================= ADMIN =================
+if (isAdmin) {
+  adminTools.style.display = "flex";
+  enterPage();
+}
+
+// ================= UPLOAD FOTO =================
+fileInput.addEventListener("change", async () => {
+
+  const files = fileInput.files;
+
+  for (let file of files) {
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "sito-foto");
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/dwamsmg53/image/upload",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data = await res.json();
+
+    // 💾 SALVA URL SU FIREBASE
+    await addDoc(collection(db, "photos"), {
+      url: data.secure_url,
+      created: Date.now()
+    });
+  }
+
+  loadPhotos();
+});
+
+// ================= LOAD GALLERY =================
+async function loadPhotos() {
+
+  gallery.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "photos"));
+
+  snap.forEach(doc => {
+    const div = document.createElement("div");
+    div.className = "photo";
+    div.innerHTML = `<img src="${doc.data().url}">`;
+    gallery.appendChild(div);
+  });
+}
+
+</script>
+
+</body>
+</html>
