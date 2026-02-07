@@ -206,7 +206,7 @@ async function loadPhotos() {
   });
 }
 
-// ================= CHAT =================
+// ================= CHAT FULL HEIGHT =================
 
 import {
   onSnapshot,
@@ -214,18 +214,45 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// CREA CONTENITORE CHAT
 const chatBox = document.createElement("div");
-chatBox.style.position = "fixed";
-chatBox.style.right = "20px";
-chatBox.style.bottom = "20px";
-chatBox.style.width = "260px";
-chatBox.style.background = "#15182d";
-chatBox.style.padding = "10px";
-chatBox.style.borderRadius = "10px";
 
+chatBox.style.position = "fixed";
+chatBox.style.right = "0";
+chatBox.style.top = "0";
+chatBox.style.width = "300px";
+chatBox.style.height = "100vh";
+chatBox.style.background = "#15182d";
+chatBox.style.display = "flex";
+chatBox.style.flexDirection = "column";
+chatBox.style.borderLeft = "1px solid #23264a";
+
+// HTML CHAT
 chatBox.innerHTML = `
-<div id="messages" style="height:200px;overflow:auto;"></div>
-<input id="msgInput" placeholder="Scrivi..." style="width:100%;margin-top:5px;">
+
+  <div style="
+    padding:15px;
+    border-bottom:1px solid #23264a;
+  ">
+    <input
+      id="msgInput"
+      placeholder="Scrivi messaggio..."
+      style="
+        width:100%;
+        padding:10px;
+        border-radius:6px;
+        border:none;
+        font-size:14px;
+      ">
+  </div>
+
+  <div id="messages"
+       style="
+         flex:1;
+         overflow-y:auto;
+         padding:15px;
+       ">
+  </div>
 `;
 
 document.body.appendChild(chatBox);
@@ -235,8 +262,9 @@ const msgInput = document.getElementById("msgInput");
 
 const user = isAdmin ? "admin" : "user";
 
-// INVIO
+// ================= INVIO =================
 msgInput.addEventListener("keydown", async e => {
+
   if (e.key === "Enter") {
 
     const text = msgInput.value.trim();
@@ -252,25 +280,42 @@ msgInput.addEventListener("keydown", async e => {
   }
 });
 
-// RICEZIONE REALTIME
-const q = query(collection(db, "messages"), orderBy("time"));
+// ================= RICEZIONE REALTIME =================
+const q = query(
+  collection(db, "messages"),
+  orderBy("time")
+);
 
 onSnapshot(q, snap => {
 
   messagesDiv.innerHTML = "";
 
   snap.forEach(doc => {
+
     const m = doc.data();
 
+    const name =
+      m.user === "admin"
+        ? "Admin"
+        : "Ospite";
+
+    const align =
+      m.user === "admin"
+        ? "right"
+        : "left";
+
     messagesDiv.innerHTML += `
-      <div style="margin:4px 0;
-        text-align:${m.user === "admin" ? "right" : "left"}">
-        ${m.text}
+      <div style="
+        margin-bottom:10px;
+        text-align:${align};
+      ">
+        <b>${name}:</b> ${m.text}
       </div>
     `;
   });
 
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  messagesDiv.scrollTop =
+    messagesDiv.scrollHeight;
 });
 
 
