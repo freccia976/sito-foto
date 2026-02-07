@@ -26,7 +26,12 @@ header{
   justify-content:space-between;
   align-items:center;
   border-bottom:1px solid #23264a;
+
+  position:sticky;
+  top:0;
+  z-index:1000;
 }
+
 
 .header-right{
   display:flex;
@@ -57,9 +62,28 @@ header button{
 
 .gallery{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:12px;
+  grid-template-columns:repeat(6,1fr); /* max 6 */
+  gap:14px;
 }
+
+/* Responsive */
+
+@media (max-width:1400px){
+  .gallery{grid-template-columns:repeat(5,1fr);}
+}
+
+@media (max-width:1100px){
+  .gallery{grid-template-columns:repeat(4,1fr);}
+}
+
+@media (max-width:800px){
+  .gallery{grid-template-columns:repeat(3,1fr);}
+}
+
+@media (max-width:500px){
+  .gallery{grid-template-columns:repeat(2,1fr);}
+}
+
 
 .photo{
   background:transparent; /* niente cornice */
@@ -85,11 +109,12 @@ header button{
 }
 
 .gallery.full .photo{
-  height:calc(100vh - 140px);
+  height:auto;
 }
 
 .gallery.full img{
-  height:100%;
+  width:100%;
+  height:auto;
   object-fit:contain;
   background:black;
 }
@@ -302,10 +327,22 @@ snap.forEach(d=>{
 
 const originalUrl = d.data().url;
 
-const imgUrl = originalUrl.replace(
+// GRID RESIZE
+const gridUrl = originalUrl.replace(
   "/upload/",
-  "/upload/c_fill,w_400,h_400,q_auto,f_auto/l_text:Arial_80:©%20Protetta da copyright,o_20,a_45,g_center/"
+  "/upload/c_fill,w_400,h_400,q_auto,f_auto/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
 );
+
+// FULL ORIGINALE
+const fullUrl = originalUrl.replace(
+  "/upload/",
+  "/upload/l_text:Arial_80:©%20Privato,o_20,a_45,g_center/"
+);
+
+// SE MODALITÀ FULL
+const imgUrl = gallery.classList.contains("full")
+  ? fullUrl
+  : gridUrl;
 
 
 gallery.innerHTML+=`
