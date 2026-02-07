@@ -282,30 +282,41 @@ location.href="deleted.html";
 });
 
 // ===== ACCESSO =====
-(async()=>{
+window.addEventListener("load", async ()=>{
 
-const snap=await getDoc(doc(db,"page","config"));
+const snap =
+  await getDoc(doc(db,"page","config"));
 
+// 🔴 Pagina eliminata
 if(!snap.exists()){
 
+  if(isAdmin){
+    location.href="index.html";
+  }else{
+    location.href="deleted.html";
+  }
+
+  return;
+}
+
+// 🟢 ADMIN entra diretto
 if(isAdmin){
-location.href="index.html";
-}else{
-location.href="deleted.html";
+
+  loginBox.style.display="none";
+  content.style.display="grid";
+  adminTools.style.display="flex";
+
+  loadPhotosRealtime();
+  startChat();
+
+  return;
 }
 
-return;
-}
-
-if(isAdmin){
-enterPage();
-return;
-}
-
+// 🔐 UTENTE → solo login
 loginBox.style.display="block";
 content.style.display="none";
 
-})();
+});
 
 // ===== LOGIN =====
 window.checkPassword=async()=>{
