@@ -6,6 +6,8 @@
 
 <style>
 
+/* ===== RESET ===== */
+
 *{
   box-sizing:border-box;
   font-family:Arial,sans-serif;
@@ -56,7 +58,7 @@ header button{
   padding:20px 40px;
 }
 
-/* ===== GALLERY GRID ===== */
+/* ===== GALLERY ===== */
 
 .gallery{
   display:grid;
@@ -64,21 +66,14 @@ header button{
   gap:14px;
 }
 
-@media (max-width:1400px){
-.gallery{grid-template-columns:repeat(5,1fr);}
-}
-@media (max-width:1100px){
-.gallery{grid-template-columns:repeat(4,1fr);}
-}
-@media (max-width:800px){
-.gallery{grid-template-columns:repeat(3,1fr);}
-}
-@media (max-width:500px){
-.gallery{grid-template-columns:repeat(2,1fr);}
-}
+@media(max-width:1400px){.gallery{grid-template-columns:repeat(5,1fr);}}
+@media(max-width:1100px){.gallery{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:800px){.gallery{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:500px){.gallery{grid-template-columns:repeat(2,1fr);}}
+
+/* FOTO */
 
 .photo{
-  background:transparent;
   border-radius:10px;
   overflow:hidden;
   aspect-ratio:1/1;
@@ -107,13 +102,6 @@ header button{
   justify-content:center;
   align-items:center;
   background:#000;
-  border-radius:12px;
-}
-
-.gallery.full img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
 }
 
 /* ===== LOGIN ===== */
@@ -156,20 +144,13 @@ header button{
   flex-direction:column;
 }
 
-.chat input{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:6px;
-}
-
 .messages{
   flex:1;
   overflow-y:auto;
   padding:15px;
 }
 
-/* ===== DRAG OVERLAY ===== */
+/* ===== DRAG ===== */
 
 .drag-overlay{
   position:fixed;
@@ -236,30 +217,6 @@ projectId:"sito-foto-98234"
 
 const db=getFirestore(app);
 
-// ===== BLOCCO ACCESSO =====
-
-(async ()=>{
-
-  const snap = await getDoc(doc(db,"page","config"));
-
-  // Pagina non esiste
-  if(!snap.exists()){
-    showDeleted();
-    return;
-  }
-
-  // ADMIN entra diretto
-  if(isAdmin){
-    enterPage();
-    return;
-  }
-
-
-  // Altrimenti resta su login
-  loginBox.style.display="block";
-
-})();
-
 // ===== ELEMENTI =====
 const gallery=document.getElementById("gallery");
 const loginBox=document.getElementById("loginBox");
@@ -269,22 +226,24 @@ const fileInput=document.getElementById("fileInput");
 
 const isAdmin=localStorage.getItem("admin")==="true";
 
-// ===== VIEW =====
-window.setGrid=()=>{
-gallery.classList.remove("full");
-localStorage.setItem("viewMode","grid");
-loadPhotosRealtime();
-};
+// ===== ACCESSO =====
+(async()=>{
 
-window.setFull=()=>{
-gallery.classList.add("full");
-localStorage.setItem("viewMode","full");
-loadPhotosRealtime();
-};
+const snap=await getDoc(doc(db,"page","config"));
 
-if(localStorage.getItem("viewMode")==="full"){
-gallery.classList.add("full");
+if(!snap.exists()){
+showDeleted();
+return;
 }
+
+if(isAdmin){
+enterPage();
+return;
+}
+
+loginBox.style.display="block";
+
+})();
 
 // ===== LOGIN =====
 window.checkPassword=async()=>{
@@ -292,65 +251,41 @@ window.checkPassword=async()=>{
 const pwd=document.getElementById("pwd").value;
 const snap=await getDoc(doc(db,"page","config"));
 
-if(!snap.exists()) return alert("Pagina non attiva");
-
 if(pwd===snap.data().password){
 localStorage.setItem("userAccess","true");
 enterPage();
-}else{
-alert("Password errata");
-}
+}else alert("Password errata");
+
 };
 
 // ===== ENTER =====
 async function enterPage(){
 
-  const snap = await getDoc(doc(db,"page","config"));
+loginBox.style.display="none";
+content.style.display="grid";
 
-  if(!snap.exists()){
-    showDeleted();
-    return;
-  }
+if(isAdmin) adminTools.style.display="flex";
 
-  // 🔐 ADMIN BYPASS
-  if(isAdmin){
-    loginBox.style.display="none";
-    content.style.display="grid";
-    adminTools.style.display="flex";
-    loadPhotosRealtime();
-    return;
-  }
-
-  // 🔐 UTENTE DEVE AVERE ACCESSO
-  if(localStorage.getItem("userAccess")!=="true"){
-    loginBox.style.display="block";
-    return;
-  }
-
-  loginBox.style.display="none";
-  content.style.display="grid";
-  loadPhotosRealtime();
+loadPhotosRealtime();
 }
 
+// ===== VIEW =====
+window.setGrid=()=>{
+gallery.classList.remove("full");
+loadPhotosRealtime();
+};
 
-if(isAdmin){
-  enterPage();
-}
-
-if(localStorage.getItem("userAccess")==="true"){
-enterPage();
-}
+window.setFull=()=>{
+gallery.classList.add("full");
+loadPhotosRealtime();
+};
 
 // ===== UPLOAD =====
-fileInput.addEventListener("change",uploadFiles);
+fileInput.addEventListener("change",e=>uploadFiles(e.target.files));
 
-async function uploadFiles(filesInput){
-
-const files=filesInput?.target?.files || filesInput;
+async function uploadFiles(files){
 
 for(let file of files){
-
-if(!file.type.startsWith("image/")) continue;
 
 const fd=new FormData();
 fd.append("file",file);
@@ -397,14 +332,13 @@ const img=gallery.classList.contains("full")?fullUrl:gridUrl;
 
 gallery.innerHTML+=`
 <div class="photo">
-<img src="${img}" oncontextmenu="return false">
+<img src="${img}">
 </div>`;
 });
 });
 }
 
 // ===== CHAT =====
-
 const headerHeight=document.querySelector("header").offsetHeight;
 
 const chat=document.createElement("div");
@@ -427,39 +361,23 @@ const user=isAdmin?"admin":"user";
 
 msgInput.addEventListener("keydown",async e=>{
 if(e.key==="Enter"){
-
-const text=msgInput.value.trim();
-if(!text) return;
-
-msgInput.value="";
-
 await addDoc(collection(db,"messages"),{
-text,user,time:Date.now()
+text:msgInput.value,
+user,
+time:Date.now()
 });
+msgInput.value="";
 }
 });
 
-const mq=query(collection(db,"messages"),orderBy("time","desc"));
-
-onSnapshot(mq,snap=>{
+onSnapshot(query(collection(db,"messages"),orderBy("time","desc")),snap=>{
 
 messagesDiv.innerHTML="";
 
 snap.forEach(d=>{
-
 const m=d.data();
-const name=m.user==="admin"?"Admin":"Ospite";
-const align=m.user==="admin"?"right":"left";
-
-const text=m.text.replace(
-/(https?:\/\/[^\s]+)/g,
-'<a href="$1" target="_blank" style="color:#4ea1ff;">$1</a>'
-);
-
 messagesDiv.innerHTML+=`
-<div style="margin-bottom:10px;text-align:${align}">
-<b>${name}:</b> ${text}
-</div>`;
+<div><b>${m.user==="admin"?"Admin":"Ospite"}:</b> ${m.text}</div>`;
 });
 });
 
@@ -476,18 +394,27 @@ photos.forEach(p=>deleteDoc(p.ref));
 const msgs=await getDocs(collection(db,"messages"));
 msgs.forEach(m=>deleteDoc(m.ref));
 
-localStorage.clear();
-location.reload();
+// 🔁 REDIRECT CORRETTO
+if(isAdmin){
+location.href="admin.html";
+}else{
+showDeleted();
+}
+
 };
 
-// ===== DRAG DROP =====
+// ===== DELETED =====
+function showDeleted(){
+document.body.innerHTML="<h1 style='text-align:center;margin-top:40vh'>Pagina eliminata</h1>";
+}
+
+// ===== DRAG =====
 if(isAdmin){
 
 let overlay=null;
 
 document.addEventListener("dragenter",e=>{
 e.preventDefault();
-
 if(!overlay){
 overlay=document.createElement("div");
 overlay.className="drag-overlay";
@@ -498,17 +425,9 @@ document.body.appendChild(overlay);
 
 document.addEventListener("dragover",e=>e.preventDefault());
 
-document.addEventListener("dragleave",e=>{
-if(e.clientX===0 && e.clientY===0){
-overlay?.remove();
-overlay=null;
-}
-});
-
-document.addEventListener("drop",async e=>{
+document.addEventListener("drop",e=>{
 e.preventDefault();
 overlay?.remove();
-overlay=null;
 uploadFiles(e.dataTransfer.files);
 });
 }
