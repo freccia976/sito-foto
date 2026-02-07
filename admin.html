@@ -68,8 +68,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getFirestore,
   doc,
-  setDoc
+  setDoc,
+  collection,
+  getDocs,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 
 // ================= CONFIG TUA =================
 const firebaseConfig = {
@@ -109,13 +113,30 @@ window.createPage = async function () {
 
   try {
 
+    // ===== RESET FOTO =====
+    const photos =
+      await getDocs(collection(db, "photos"));
+
+    for (const p of photos.docs) {
+      await deleteDoc(p.ref);
+    }
+
+    // ===== RESET CHAT =====
+    const msgs =
+      await getDocs(collection(db, "messages"));
+
+    for (const m of msgs.docs) {
+      await deleteDoc(m.ref);
+    }
+
+    // ===== CREA NUOVA PAGINA =====
     await setDoc(doc(db, "page", "config"), {
       active: true,
       password: password,
       created: Date.now()
     });
 
-    alert("Pagina creata!");
+    alert("Pagina creata vuota!");
 
     window.location.href = "page.html";
 
@@ -124,6 +145,7 @@ window.createPage = async function () {
     alert("Errore creazione pagina");
   }
 };
+
 
 </script>
 
