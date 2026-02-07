@@ -276,6 +276,21 @@ const snap=await getDoc(doc(db,"page","config"));
 if(pwd===snap.data().password){
 localStorage.setItem("userAccess","true");
 enterPage();
+async function enterPage(){
+
+  const snap = await getDoc(doc(db,"page","config"));
+
+  if(!snap.exists()){
+    alert("Pagina non attiva");
+    location.reload();
+    return;
+  }
+
+  loginBox.style.display="none";
+  content.style.display="grid";
+  loadPhotosRealtime();
+}
+
 }else{
 alert("Password errata");
 }
@@ -446,26 +461,32 @@ e.preventDefault();
 
 // ===== ELIMINA PAGINA =====
 
-window.deletePage = async function () {
+window.deletePage = async function(){
 
-  if (!confirm("Eliminare pagina e tutte le foto?"))
+  if(!confirm("Eliminare pagina e tutte le foto?"))
     return;
 
-  // Cancella config
+  // CONFIG
   await deleteDoc(doc(db,"page","config"));
 
-  // Cancella foto DB
+  // FOTO
   const photos = await getDocs(collection(db,"photos"));
   photos.forEach(p=>deleteDoc(p.ref));
 
-  // Cancella chat
+  // CHAT
   const msgs = await getDocs(collection(db,"messages"));
   msgs.forEach(m=>deleteDoc(m.ref));
 
+  // RESET ACCESSI
+  localStorage.removeItem("userAccess");
+  localStorage.removeItem("admin");
+
   alert("Pagina eliminata");
 
+  // TORNA LOGIN
   location.reload();
 };
+
 
 // ===== DRAG SU TUTTA PAGINA =====
 
